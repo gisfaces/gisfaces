@@ -99,6 +99,7 @@ require([
 	"esri/widgets/LayerList",
 	"esri/widgets/Legend",
 	"esri/widgets/Locate",
+	"esri/widgets/Measurement",
 	"esri/widgets/Print",
 	"esri/widgets/ScaleBar",
 	"esri/widgets/Search",
@@ -152,6 +153,7 @@ require([
 	LayerList,
 	Legend,
 	Locate,
+	Measurement,
 	Print,
 	ScaleBar,
 	Search,
@@ -730,6 +732,35 @@ require([
 	}
 
 	/**
+	 * Function to create the measurement widget.
+	 */
+	com.gisfaces.createMeasurementWidget = function() {
+		console.log("Creating measurement widget.");
+
+		com.gisfaces.measurement = new Measurement({
+			view: com.gisfaces.view,
+			activeTool: null
+		});
+
+		var expand = new Expand({
+			content: com.gisfaces.measurement,
+			expandIconClass: "esri-icon-measure-area",
+			expandTooltip: "Show Measurement",
+			collapseTooltip: "Hide Measurement"
+		});
+
+		com.gisfaces.view.ui.add(expand, {
+			position: "top-right"
+		});
+
+		// Watch for widget click/expansion.
+		expand.watch("expanded", function(value) {
+			console.log("Measurement widget enabled is '%s'.", value);
+			com.gisfaces.measurement.activeTool = (value) ? "area" : null;
+		});
+	}
+
+	/**
 	 * Function to create all widgets.
 	 */
 	com.gisfaces.createAllWidgets = function() {
@@ -740,6 +771,7 @@ require([
 		com.gisfaces.createBasemapGalleryWidget();
 		com.gisfaces.createLayerListWidget();
 		com.gisfaces.createLegendWidget();
+		com.gisfaces.createMeasurementWidget();
 		com.gisfaces.createTrackWidget();
 		com.gisfaces.createFullscreenWidget();
 		com.gisfaces.createCoordinateWidget();
@@ -931,6 +963,7 @@ require([
 				com.gisfaces.addGeoRSSLayer(properties, index);
 				break;
 			case "graphics":
+				com.gisfaces.addGraphicsLayer(properties, index);
 				break;
 			case "imagery":
 				com.gisfaces.addImageryLayer(properties, index);
@@ -1113,18 +1146,14 @@ require([
 
 	/**
 	 * Function to create and add a new graphics layer.
-	 * @param layerId Layer ID used for later reference.
-	 * @param title Layer title displayed in Legend and LayerList widgets.
+	 * @param properties JSON properties defining layer.
 	 * @param index Layer index.
 	 */
-	com.gisfaces.addGraphicsLayer = function(layerId, title, index) {
-		console.log("Adding graphics layer with id '%s' and title '%s'.", layerId, title);
+	com.gisfaces.addGraphicsLayer = function(properties, index) {
+		console.log("Adding graphics layer with properties '%s'.", JSON.stringify(properties));
 
 		// Create a new graphics layer.
-		var layer = new GraphicsLayer({
-			id: layerId,
-			title: title
-		});
+		var layer = new GraphicsLayer(properties);
 
 		// Set the default popup template.
 		layer.popupTemplate = com.gisfaces.createDefaultPopupTemplate(layer.title);
@@ -1688,8 +1717,14 @@ require([
 		// Set the ID property.
 		graphic.id = properties.id;
 
+		// Set a popup title.
+		var title = properties.title;
+		if (!title) {
+			title = properties.id;
+		}
+
 		// Set the default popup template.
-		graphic.popupTemplate = com.gisfaces.createDefaultPopupTemplate(properties.id);
+		graphic.popupTemplate = com.gisfaces.createDefaultPopupTemplate(title);
 
 		return graphic;
 	}

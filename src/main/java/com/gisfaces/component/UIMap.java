@@ -24,6 +24,25 @@
 
 package com.gisfaces.component;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import javax.faces.application.ResourceDependencies;
+import javax.faces.application.ResourceDependency;
+import javax.faces.component.FacesComponent;
+import javax.faces.component.UIComponent;
+import javax.faces.component.UIComponentBase;
+import javax.faces.component.behavior.ClientBehavior;
+import javax.faces.component.behavior.ClientBehaviorContext;
+import javax.faces.component.behavior.ClientBehaviorHolder;
+import javax.faces.context.ExternalContext;
+import javax.faces.context.FacesContext;
+import javax.faces.context.ResponseWriter;
+
 import com.gisfaces.event.Event;
 import com.gisfaces.event.MapBasemapEvent;
 import com.gisfaces.event.MapClickEvent;
@@ -66,23 +85,6 @@ import com.gisfaces.utilities.StringUtilities;
 import com.gisfaces.utilities.json.JSONException;
 import com.gisfaces.utilities.json.JSONObject;
 import com.gisfaces.utilities.json.JSONVisitor;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import javax.faces.application.ResourceDependencies;
-import javax.faces.application.ResourceDependency;
-import javax.faces.component.FacesComponent;
-import javax.faces.component.UIComponent;
-import javax.faces.component.UIComponentBase;
-import javax.faces.component.behavior.ClientBehavior;
-import javax.faces.component.behavior.ClientBehaviorContext;
-import javax.faces.component.behavior.ClientBehaviorHolder;
-import javax.faces.context.ExternalContext;
-import javax.faces.context.FacesContext;
-import javax.faces.context.ResponseWriter;
 
 /**
  * GIS map custom component using the ESRI ArcGIS JavaScript API.
@@ -664,25 +666,35 @@ public class UIMap extends UIComponentBase implements ClientBehaviorHolder {
 
 					writer.write(String.format("com.gisfaces.processLayer('%s', %s, %d, %b);", LayerType.GEO_RSS.toString(), jo, i, false));
 				} else if (layer instanceof GraphicsLayer) {
-					if (!context.isPostback()) {
-						// Add new layer.
-						writer.write(String.format("com.gisfaces.addGraphicsLayer('%s', '%s', %s);", layer.getId(), layer.getTitle(), i));
+					// Build a JSON object from the layer.
+					JSONObject jo = new JSONObject((GraphicsLayer) layer, true);
+					this.sanitizeJsonObject(jo);
 
+					// Remove the graphics and manually add.
+					jo.remove("graphics");
+
+					// Add/update the layer.
+					writer.write(String.format("com.gisfaces.processLayer('%s', %s, %d, %b);", LayerType.GRAPHICS.toString(), jo, i, false));
+
+					if (!context.isPostback()) {
 						// Enable sketch widget.
 						if (((GraphicsLayer) layer).isEditable()) {
 							writer.write(String.format("com.gisfaces.createSketchWidget(com.gisfaces.findLayer('%s'));", layer.getId()));
 						}
-					} else {
-						// Remove all existing graphics.
-						writer.write(String.format("com.gisfaces.removeAllGraphics('%s');", layer.getId()));
 					}
 
-					// Add defined graphics.
-					if (((GraphicsLayer) layer).getGraphics() != null) {
-						for (Graphic g : ((GraphicsLayer) layer).getGraphics()) {
-							JSONObject jo = new JSONObject(g, true);
-							this.sanitizeJsonObject(jo);
-							writer.write(String.format("com.gisfaces.addGraphic('%s', com.gisfaces.createGraphic(%s));", layer.getId(), jo));
+					// Process layer graphics only when visible.
+					if (((GraphicsLayer) layer).getVisible()) {
+						// Remove all existing graphics.
+						writer.write(String.format("com.gisfaces.removeAllGraphics('%s');", layer.getId()));
+
+						// Add defined graphics.
+						if (((GraphicsLayer) layer).getGraphics() != null) {
+							for (Graphic g : ((GraphicsLayer) layer).getGraphics()) {
+								JSONObject gjo = new JSONObject(g, true);
+								this.sanitizeJsonObject(gjo);
+								writer.write(String.format("com.gisfaces.addGraphic('%s', com.gisfaces.createGraphic(%s));", layer.getId(), gjo));
+							}
 						}
 					}
 				} else if (layer instanceof ImageryLayer) {
