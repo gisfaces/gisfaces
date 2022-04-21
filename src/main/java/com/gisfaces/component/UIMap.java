@@ -601,8 +601,10 @@ public class UIMap extends UIComponentBase implements ClientBehaviorHolder {
             writer.write(String.format("com.gisfaces.zoomToCoordinate(%s, %s, %s);", model.getViewpoint().getLatitude(), model.getViewpoint().getLongitude(),
                     model.getViewpoint().getZoom()));
 
-			// Update the map basemap layer.
-			writer.write(String.format("com.gisfaces.setMapBasemap('%s');", model.getBasemap().getValue()));
+            if (model.getWebMapPortalItemId() == null) {
+                // Update the map basemap layer when not configured by WebMap
+                writer.write(String.format("com.gisfaces.setMapBasemap('%s');", model.getBasemap().getValue()));
+            }
 
             // Encode all map layers.
             this.encodeMapLayers(context, this, writer, model);
