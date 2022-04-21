@@ -60,6 +60,9 @@ public class MapModel implements Serializable {
 	/** Map layers. */
 	private List<Layer> layers;
 
+	/** Map Widgets. */
+	private List<Widget> mapWidgets;
+
 	/**
 	 * Constructor.
 	 */
@@ -197,5 +200,23 @@ public class MapModel implements Serializable {
 	 */
 	public void setLayers(List<Layer> layers) {
 		this.layers = layers;
+	}
+
+	/**
+	 * Method to get the map widgets. (null assumes all widgets)
+	 *
+	 * @return
+	 */
+	public List<Widget> getMapWidgets() {
+		return mapWidgets;
+	}
+
+	/**
+	 * Method to set the map widgets.
+	 *
+	 * @param mapWidgets
+	 */
+	public void setMapWidgets(List<Widget> mapWidgets) {
+		this.mapWidgets = mapWidgets;
 	}
 }
